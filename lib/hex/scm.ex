@@ -446,11 +446,34 @@ defmodule Hex.SCM do
     prune_uri_userinfo(Hex.Repo.get_repo(repo).url <> "/tarballs/#{filename}")
   end
 
-  defp prune_uri_userinfo(url) do
+  def prune_uri_userinfo(url) do
     case URI.parse(url) do
-      %URI{userinfo: nil} -> url
-      uri -> URI.to_string(%{uri | userinfo: "******"})
+      %URI{userinfo: nil, query: nil} ->
+        url
+
+      %URI{} = uri ->
+        URI.to_string(%{
+          uri
+          | userinfo: mask_userinfo(uri.userinfo),
+            query: mask_query(uri.query)
+        })
     end
+  end
+
+  defp mask_userinfo(nil), do: nil
+  defp mask_userinfo(_userinfo), do: "******"
+
+  defp mask_query(nil), do: nil
+
+  defp mask_query(query) do
+    query
+    |> String.split("&")
+    |> Enum.map_join("&", fn pair ->
+      case String.split(pair, "=", parts: 2) do
+        [name, _value] -> name <> "=***"
+        [flag] -> flag
+      end
+    end)
   end
 
   def cache_path(repo, package, version) do

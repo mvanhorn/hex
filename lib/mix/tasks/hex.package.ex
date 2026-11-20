@@ -232,7 +232,9 @@ defmodule Mix.Tasks.Hex.Package do
           else
             Mix.raise(
               "Downloading " <>
-                Hex.Repo.tarball_url(repo, package, version) <> " failed:\n\n" <> reason
+                Hex.SCM.prune_uri_userinfo(Hex.Repo.tarball_url(repo, package, version)) <>
+                " failed:\n\n" <>
+                reason
             )
           end
       end
